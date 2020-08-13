@@ -1,0 +1,2 @@
+(defpackage approxfun
+  (:use :cl))
