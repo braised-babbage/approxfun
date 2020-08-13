@@ -7,5 +7,6 @@
   :components ((:file "package")
                (:file "fftw")
                (:file "chebyshev")
-               (:file "approx"))
+               (:file "approx")
+               (:file "plot"))
   :depends-on (:cffi))

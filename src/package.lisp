@@ -13,4 +13,9 @@
    ;; chebyshev.lisp
    #:chebyshev-points
    #:chebyshev-coefficients
-   #:chebyshev-interpolate))
+   #:chebyshev-interpolate
+
+   ;; plot.lisp
+   #:plot
+   #:plot-coefficients
+   ))
