@@ -6,5 +6,6 @@
   :pathname "src/"
   :components ((:file "package")
                (:file "fftw")
-               (:file "chebyshev"))
+               (:file "chebyshev")
+               (:file "approx"))
   :depends-on (:cffi))
