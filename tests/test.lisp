@@ -21,6 +21,13 @@
          (< (abs (- obj1 obj2))
             threshold))))
 
+(defun randomized-equality-check (obj1 obj2 &optional (trials 10))
+  (every (lambda (x)
+           (double= (approxfun::function-value obj1 x)
+                    (approxfun::function-value obj2 x)))
+         (loop :for i :below trials
+               :collect (1- (random 1d0)))))
+
 (deftest test-chebyshev-points-size-and-sort ()
   "The array of Chebyshev points has the right size and order. "
   (let ((pts (chebyshev-points 10)))
@@ -79,3 +86,12 @@
     (is (double= (approxfun::chebyshev-approximant-values weird)
                  (approxfun::samples-from-coefficients
                   (approxfun::chebyshev-approximant-coeffs weird))))))
+
+
+(deftest test-indefinite-integral ()
+  (is (randomized-equality-check
+       (approxfun (lambda (x) (- (* 1/2 x x) 1/2)))
+       (integrate (approxfun (lambda (x) x)))))
+  (is (randomized-equality-check
+       (approxfun (lambda (x) (- (sin x) (sin -1d0))))
+       (integrate (approxfun #'cos)))))

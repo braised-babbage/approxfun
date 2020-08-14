@@ -4,6 +4,7 @@
 
    ;; approx.lisp
    #:approxfun
+   #:function-value
    #:*log-max-chebyshev-samples*
 
    ;; operators.lisp
@@ -12,6 +13,7 @@
    #:c*
    #:c/
    #:definite-integral
+   #:integrate
 
    ;; chebyshev.lisp
    #:chebyshev-points
