@@ -121,9 +121,9 @@ Chebyshev coefficients is deemed to be negligible."
          (max-abs (loop :for i :from 0 :below n
                         :maximizing (abs (aref coeffs i))))
          (envelope (make-array n :element-type 'double-float)))
-    (cond ((>= *double-float-tolerance* 1) 0)
-          ((= 0d0 max-abs) 0)
-          ((< n 17) nil)
+    (cond ((< n 17) nil)
+          ((>= *double-float-tolerance* 1) 1)
+          ((= 0d0 max-abs) 1)
           (t
            ;; Construct monotonic envelope
            (loop :with m := 0d0

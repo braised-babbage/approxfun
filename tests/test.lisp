@@ -21,13 +21,6 @@
          (< (abs (- obj1 obj2))
             threshold))))
 
-(defun randomized-equality-check (obj1 obj2 &optional (trials 10))
-  (every (lambda (x)
-           (double= (approxfun::function-value obj1 x)
-                    (approxfun::function-value obj2 x)))
-         (loop :for i :below trials
-               :collect (1- (random 1d0)))))
-
 (deftest test-chebyshev-points-size-and-sort ()
   "The array of Chebyshev points has the right size and order. "
   (let ((pts (chebyshev-points 10)))
@@ -90,19 +83,19 @@
 
 (deftest test-indefinite-integral ()
 	"Indefinite integrals are correct for polynomials and trig functions."
-  (is (randomized-equality-check
+  (is (approxfun::randomized-equality-check
        (approxfun (lambda (x) (- (* 1/2 x x) 1/2)))
        (integrate (approxfun (lambda (x) x)))))
-  (is (randomized-equality-check
+  (is (approxfun::randomized-equality-check
        (approxfun (lambda (x) (- (sin x) (sin -1d0))))
        (integrate (approxfun #'cos)))))
 
 
 (deftest test-arithmetic ()
-  (is (randomized-equality-check (approxfun (lambda (x) (+ x 1)))
+  (is (approxfun::randomized-equality-check (approxfun (lambda (x) (+ x 1)))
                                  (c+ (approxfun (constantly 1d0))
                                      (approxfun #'identity))))
-  (is (randomized-equality-check (approxfun (lambda (x) (* x (sin x))))
+  (is (approxfun::randomized-equality-check (approxfun (lambda (x) (* x (sin x))))
                                  (c* (approxfun #'identity)
                                      (approxfun #'sin)))))
 
@@ -114,4 +107,16 @@
     (setf (aref coeffs 99) #C(1d0 0d0))
     (let* ((fn (chebyshev-interpolate (samples-from-coefficients coeffs)))
            (apfun (approxfun fn)))
-      (is (randomized-equality-check fn apfun)))))
+      (is (approxfun::randomized-equality-check fn apfun)))))
+
+(deftest test-differentiate ()
+  "Checks that DIFFERENTIATE reproduces standard identities."
+  (approxfun::randomized-equality-check (approxfun (constantly 0d0))
+                             (differentiate (approxfun (constantly 1d0))))
+  (approxfun::randomized-equality-check (approxfun #'identity)
+                                        (differentiate (approxfun (lambda (x) (* 1/2 x x)))))
+  ;; TODO: get to the bottom of this!!!
+  (let ((cos (approxfun #'cos))
+        (dsin (differentiate (approxfun #'sin)))
+        (approxfun:*double-float-tolerance* 5d-15))
+    (approxfun::randomized-equality-check cos dsin)))

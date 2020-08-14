@@ -49,4 +49,26 @@ taken at the left endpoint of the domain."
       (c+ result
           (- constant (function-value result -1d0))))))
 
+(defun differentiate (apfun)
+  "Compute the derivative of APFUN."
+  (let* ((coeffs (chebyshev-approximant-coeffs apfun))
+         (n (length coeffs)))
+    (if (= 1 n)
+        (approxfun (constantly 0))
+        (let ((dcoeffs (make-array (1+ n) :element-type '(complex double-float))))
+          ;; if p(x) = \sum_{k=0}^n a(k) T_k(x)
+          ;; then p'(x) = \sum_{k=0}^{n-1} b(k) T_k(x)
+          ;; with b(k-1) = b(k+1) + 2*k*a(k) for 2 <= k <= n
+          ;; and b(n) = b(n+1) = 0, b(0) = b(2)/2 + a(1)
+          (setf (aref dcoeffs n) #C(0d0 0d0)
+                (aref dcoeffs (1- n)) #C(0d0 0d0))
+          (loop :for i :from (1- n) :downto 2
+                :do (setf (aref dcoeffs (1- i))
+                          (+ (aref dcoeffs (1+ i))
+                             (* (* 2d0 i) (aref coeffs i)))))
+          (setf (aref dcoeffs 0)
+                (+ (/ (aref dcoeffs 2) 2d0)
+                   (aref coeffs 1)))
+          (chebyshev-polynomial dcoeffs)))))
+
 ;;; TODO: mean, variance, std, norm

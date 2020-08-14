@@ -14,6 +14,7 @@
    #:c/
    #:definite-integral
    #:integrate
+   #:differentiate
 
    ;; chebyshev.lisp
    #:chebyshev-points
@@ -21,6 +22,7 @@
    #:chebyshev-interpolate
    #:sample-at-chebyshev-points
    #:samples-from-coefficients
+   #:*double-float-tolerance*
 
    ;; plot.lisp
    #:plot
