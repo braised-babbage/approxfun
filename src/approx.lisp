@@ -12,6 +12,14 @@
     (when (chebyshev-approximant-name object)
       (format stream "~S" (chebyshev-approximant-name object)))))
 
+(defun chebyshev-polynomial (coeffs &key name)
+  "Construct a Chebyshev approximant directly from its coefficients."
+  (let ((samples (samples-from-coefficients coeffs)))
+    (make-chebyshev-approximant :name name
+                                :values samples
+                                :coeffs coeffs
+                                :interp-fn (chebyshev-interpolate samples))))
+
 (defparameter *log-max-chebyshev-samples* 15
   "The logarithm (base 2) of the maximum number of Chebyshev points to sample at.")
 
@@ -36,7 +44,7 @@ number of function samples. Otherwise, adaptive sampling is used."
               :until cutoff
               :finally (return
                          (approxfun fn
-                                    :num-samples (or cutoff n)
+                                    :num-samples (or (1+ cutoff) n)
                                     :name name)))))
 
 (defun function-value (obj x)
@@ -47,17 +55,3 @@ number of function samples. Otherwise, adaptive sampling is used."
          (funcall (chebyshev-approximant-interp-fn obj) x))
         (t
          (error "Unable to compute value of ~A at ~A." obj x))))
-
-
-(defun lift-numeric-operator (op)
-  "Lift an operator OP defined for numbers to one defined for functions."
-  (lambda (&rest args)
-    (flet ((op-value (x)
-             (apply op (mapcar (lambda (f) (function-value f x)) args))))
-      (approxfun #'op-value))))
-
-
-(setf (symbol-function 'c+) (lift-numeric-operator #'+))
-(setf (symbol-function 'c-) (lift-numeric-operator #'-))
-(setf (symbol-function 'c*) (lift-numeric-operator #'*))
-(setf (symbol-function 'c/) (lift-numeric-operator #'/))

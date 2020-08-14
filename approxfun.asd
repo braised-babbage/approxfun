@@ -8,5 +8,6 @@
                (:file "fftw")
                (:file "chebyshev")
                (:file "approx")
+               (:file "operators")
                (:file "plot"))
   :depends-on (:cffi))
