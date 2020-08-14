@@ -41,11 +41,13 @@ number of function samples. Otherwise, adaptive sampling is used."
               :for vals := (sample-at-chebyshev-points fn n)
               :for coeffs := (chebyshev-coefficients vals)
               :for cutoff := (coefficient-cutoff coeffs)
-              :until cutoff
+              :when cutoff
+                :do (let ((ap (approxfun fn :num-samples (1+ cutoff) :name name)))
+                      (when (randomized-equality-check ap fn 2)
+                        (return ap)))
               :finally (return
-                         (approxfun fn
-                                    :num-samples (or (1+ cutoff) n)
-                                    :name name)))))
+                         (approxfun fn :num-samples n
+                                       :name name)))))
 
 (defun function-value (obj x)
   "Get the value of OBJ at point X."

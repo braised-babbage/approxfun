@@ -89,9 +89,29 @@
 
 
 (deftest test-indefinite-integral ()
+	"Indefinite integrals are correct for polynomials and trig functions."
   (is (randomized-equality-check
        (approxfun (lambda (x) (- (* 1/2 x x) 1/2)))
        (integrate (approxfun (lambda (x) x)))))
   (is (randomized-equality-check
        (approxfun (lambda (x) (- (sin x) (sin -1d0))))
        (integrate (approxfun #'cos)))))
+
+
+(deftest test-arithmetic ()
+  (is (randomized-equality-check (approxfun (lambda (x) (+ x 1)))
+                                 (c+ (approxfun (constantly 1d0))
+                                     (approxfun #'identity))))
+  (is (randomized-equality-check (approxfun (lambda (x) (* x (sin x))))
+                                 (c* (approxfun #'identity)
+                                     (approxfun #'sin)))))
+
+(deftest test-large-degree-chebyshev-monomial ()
+  "Large Chebyshev monomials are preserved when constructing apfuns."
+  (let* ((coeffs (make-array 100
+                             :element-type '(complex double-float)
+                             :initial-element #C(0d0 0d0))))
+    (setf (aref coeffs 99) #C(1d0 0d0))
+    (let* ((fn (chebyshev-interpolate (samples-from-coefficients coeffs)))
+           (apfun (approxfun fn)))
+      (is (randomized-equality-check fn apfun)))))

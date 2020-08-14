@@ -1,5 +1,15 @@
 (in-package :approxfun)
 
+(defparameter *double-float-tolerance* 1d-15
+  "Tolerance for double float calculations.")
+
+(defun double= (x y)
+  "Checks equality up to *DOUBLE-FLOAT-TOLERANCE*."
+  (declare (type double-float x)
+           (type double-float y))
+  (< (abs (- x y))
+     *double-float-tolerance*))
+
 (defun chebyshev-points (n)
   "Construct an array of N Chebyshev points on the interval [-1,1]. "
   (unless (> n 1)
@@ -90,20 +100,28 @@
               :finally (return (/ num denom)))))))
 
 
-(defun coefficient-cutoff (coeffs &key (tol 1d-15))
+(defun randomized-equality-check (obj1 obj2 &optional (trials 10))
+  (every (lambda (x)
+           (double= (function-value obj1 x)
+                    (function-value obj2 x)))
+         (loop :for i :below trials
+               :collect (1- (random 1d0)))))
+
+
+(defun coefficient-cutoff (coeffs)
   "Find a cutoff point for the Chebyshev coefficients COEFFS.
 
 This returns the last index of COEFFS which is deemed significant, or NIL if the
 series if no such index is found. The heuristic used is described in Aurentz and
 Trefthen, 'Chopping a Chebyshev Series'.
 
-The tolerance TOL is a relative tolerance, used to detect when the decay of
+The tolerance *DOUBLE-FLOAT-TOLERANCE* is a relative tolerance, used to detect when the decay of
 Chebyshev coefficients is deemed to be negligible."
   (let* ((n (length coeffs))
          (max-abs (loop :for i :from 0 :below n
                         :maximizing (abs (aref coeffs i))))
          (envelope (make-array n :element-type 'double-float)))
-    (cond ((>= tol 1) 0)
+    (cond ((>= *double-float-tolerance* 1) 0)
           ((= 0d0 max-abs) 0)
           ((< n 17) nil)
           (t
@@ -117,13 +135,14 @@ Chebyshev coefficients is deemed to be negligible."
                (loop :for j1 :from 1 :below n
                      :for j2 := (round (+ (* 1.25 j1)
                                           5))
-                     :unless (< j2 n)
+                     :when (<= n j2)
                        :do (return-from coefficient-cutoff nil)
+                     :when (= 0d0 (aref envelope j1))
+                       :do (return (values (1- j1) j2))
                      :do (let* ((e1 (aref envelope j1))
                                 (e2 (aref envelope j2))
-                                (r (* 3 (- 1 (/ (log e1) (log tol))))))
-                           (when (or (= e1 0d0)
-                                     (< r (/ e2 e1)))
+                                (r (* 3 (- 1 (/ (log e1) (log *double-float-tolerance*))))))
+                           (when (< r (/ e2 e1))
                              (return (values (1- j1) j2))))
                      :finally (return-from coefficient-cutoff nil))
              ;; fix cutoff at a point where envelope + an affine function
@@ -133,16 +152,16 @@ Chebyshev coefficients is deemed to be negligible."
                    (t
                     (let ((j3 (loop :for i :from 0 :below n
                                     :until (< (aref envelope i)
-                                              (expt tol (/ 7 6)))
+                                              (expt *double-float-tolerance* (/ 7 6)))
                                     :finally (return i))))
                       (when (< j3 j2)
-                        (setf j2 (1+ j3)
-                              (aref envelope j2) (expt tol (/ 7 6))))
+                        (setf j2 j3
+                              (aref envelope j2) (expt *double-float-tolerance* (/ 7 6))))
                       (loop :with min := 1d0
                             :with idx := 0
                             :for i :from 0 :to j2
                             :for cc := (+ (log (aref envelope i) 10)
-                                          (/ (* i -1/3 (log tol 10))
+                                          (/ (* i -1/3 (log *double-float-tolerance* 10))
                                              j2))
                             :when (< cc min)
                               :do (setf min cc
