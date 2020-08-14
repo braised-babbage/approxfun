@@ -2,6 +2,8 @@
 
 (defun chebyshev-points (n)
   "Construct an array of N Chebyshev points on the interval [-1,1]. "
+  (unless (> n 1)
+    (error "Unable to construct Chebyshev points on grid of size ~D" n))
   (let ((points (make-array n :element-type 'double-float)))
     (loop :for i :from 0 :below n
           :do (setf (aref points i) (cos (/ (* i pi) (1- n)))))
@@ -18,7 +20,7 @@
 
 (defun chebyshev-coefficients (samples)
   "Get the coefficients of the Chebyshev interpolant of given SAMPLES."
-  ;; we reflect to get one period [s(0), s(1), ..., s(n), s(n-1), ..., s(1)],
+  ;; we reflect to get one period [s(0), s(1), ..., s(n-1), s(n-2), ..., s(1)],
   ;; compute the FFT of this, and then truncate the results
   ;; NOTE: this could be more efficient using one of the DCT variants
   (let* ((n (length samples))
@@ -46,6 +48,24 @@
             (/ (aref results (1- n)) 2))
       results)))
 
+
+(defun samples-from-coefficients (coeffs)
+  "Construct samples at Chebyshev points from an array of Chebyshev coefficients."
+  ;; coeffs is length n
+  ;; apply inverse fourier transform
+  ;; extract real part of first n values
+  (let* ((n (length coeffs))
+         (extended (make-array (* 2 (1- n)) :element-type '(complex double-float))))
+    ;; zero pad to length 2(n-1)
+    (loop :for i :from 0 :below (* 2 (1- n))
+          :do (setf (aref extended i)
+                    (if (< i n) (aref coeffs i) #C(0d0 0d0))))
+    (let ((inverted (fft extended :direction :backward)))
+      (let ((results (make-array n :element-type 'double-float)))
+        (loop :for i :from 0 :below n
+              :do (setf (aref results i) (realpart (aref inverted i))))
+        results))))
+
 (defun chebyshev-interpolate (samples)
   "Given samples at the Chebyshev points, return a function computing the interpolant at an arbitrary point."
   ;; This is the so-called "Barycentric Interpolation", of Salzer
@@ -68,6 +88,7 @@
                     (incf num (* (aref samples i) coeff))
                     (incf denom coeff))
               :finally (return (/ num denom)))))))
+
 
 (defun coefficient-cutoff (coeffs &key (tol 1d-15))
   "Find a cutoff point for the Chebyshev coefficients COEFFS.
