@@ -1,5 +1,8 @@
 (in-package :approxfun)
 
+(defparameter *display-command-name* "open"
+  "The command to use when displaying a plot.")
+
 (defun plot (apfun file &key
                       (display nil)
                       (num-samples 500))
@@ -20,7 +23,7 @@ resulting plot.
                      tmp))
        :output file)))
   (when display
-    (uiop:run-program (list "open" (uiop:unix-namestring (truename file)))))
+    (uiop:run-program (list *display-command-name* (uiop:unix-namestring (truename file)))))
   file)
 
 (defun plot-coefficients (apfun file &key (display nil))
@@ -40,5 +43,5 @@ If DISPLAY is T, then this will open the resulting plot."
                      tmp))
        :output file)))
   (when display
-    (uiop:run-program (list "open" (uiop:unix-namestring (truename file)))))
+    (uiop:run-program (list *display-command-name* (uiop:unix-namestring (truename file)))))
   file)
