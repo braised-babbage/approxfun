@@ -13,15 +13,15 @@ resulting plot.
 "
   (check-type apfun chebyshev-approximant)
   (let ((fn (chebyshev-approximant-interp-fn apfun))
-	(d (chebyshev-approximant-domain apfun)))
+	(d (chebyshev-approximant-interval apfun)))
     (uiop:with-temporary-file (:stream data :pathname tmp)
-      (loop :for x :from (domain-lower d) :to (domain-upper d) :by (/ 2 num-samples)
+      (loop :for x :from (interval-lower d) :to (interval-upper d) :by (/ 2 num-samples)
             :do (format data "~&~F ~F" x (funcall fn x)))
       (finish-output data)
       (uiop:run-program
        (list "gnuplot" "-e"
              (format nil "set terminal svg; set key off; set xrange [~,3F:~,3F]; plot '~A' w lines"
-		     (domain-lower d) (domain-upper d)
+		     (interval-lower d) (interval-upper d)
                      tmp))
        :output file)))
   (when display

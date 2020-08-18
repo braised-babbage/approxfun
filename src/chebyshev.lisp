@@ -10,19 +10,20 @@
   (< (abs (- x y))
      *double-float-tolerance*))
 
-(defstruct (domain (:constructor %make-domain))
+(defstruct (interval (:constructor %make-interval))
   "A repesentation of an interval [LOWER, UPPER]."
   lower
   upper)
 
-(defun domain (lower upper)
+(defun interval (lower upper)
+  "Construct the interval [LOWER, UPPER]."
   (unless (< lower upper)
-    (error "Unable to construct domain [~A, ~A]. " lower upper))
-  (%make-domain :lower (coerce lower 'double-float)
+    (error "Unable to construct interval [~A, ~A]. " lower upper))
+  (%make-interval :lower (coerce lower 'double-float)
 		:upper (coerce upper 'double-float)))
 
-(defparameter *default-domain* (domain -1 1)
-  "The default domain.")
+(defparameter *default-interval* (interval -1 1)
+  "The default interval.")
 
 (defun affine-transformation (a0 b0 a1 b1)
   "Construct an affine transformation from [a0,b0] to [a1,b1]."
@@ -35,13 +36,13 @@
     (lambda (x)
       (+ (* m x) c))))
 
-(defun chebyshev-points (n &key (domain *default-domain*))
-  "Construct an array of N Chebyshev points on the given DOMAIN. "
+(defun chebyshev-points (n &key (interval *default-interval*))
+  "Construct an array of N Chebyshev points on the given INTERVAL. "
   (unless (> n 1)
     (error "Unable to construct Chebyshev points on grid of size ~D" n))
   (let ((points (make-array n :element-type 'double-float))
 	(transform (affine-transformation -1d0 1d0
-					  (domain-lower domain) (domain-upper domain))))
+					  (interval-lower interval) (interval-upper interval))))
 	(loop :with m := (1- n)
               :for i :from m :downto 0
               :for k :from (- m) :by 2
@@ -49,10 +50,10 @@
 			(funcall transform (sin (/ (* pi k) (* 2 m))))))
 	points))
 
-(defun sample-at-chebyshev-points (fn num-samples &key (domain *default-domain*))
+(defun sample-at-chebyshev-points (fn num-samples &key (interval *default-interval*))
   "Sample a function FN at NUM-SAMPLES Chebyshev points."
   (let ((values (make-array num-samples :element-type 'double-float))
-        (pts (chebyshev-points num-samples :domain domain)))
+        (pts (chebyshev-points num-samples :interval interval)))
     (loop :for i :from 0 :below num-samples
           :do (setf (aref values i)
                     (funcall fn (aref pts i))))
@@ -107,13 +108,13 @@
               :do (setf (aref results i) (realpart (aref inverted i))))
         results))))
 
-(defun chebyshev-interpolate (samples &key (domain *default-domain*))
+(defun chebyshev-interpolate (samples &key (interval *default-interval*))
   "Given samples at the Chebyshev points, return a function computing the interpolant at an arbitrary point."
   ;; This is the so-called "Barycentric Interpolation", of Salzer
   ;; cf. https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
   (let* ((n (length samples))
          (xs (chebyshev-points n))
-	 (transform (affine-transformation (domain-lower domain) (domain-upper domain)
+	 (transform (affine-transformation (interval-lower interval) (interval-upper interval)
 					   -1d0 1d0)))
     (lambda (x)
       (let ((num 0d0)
@@ -132,14 +133,6 @@
                     (incf num (* (aref samples i) coeff))
                     (incf denom coeff))
               :finally (return (/ num denom)))))))
-
-
-(defun randomized-equality-check (obj1 obj2 &optional (trials 10))
-  (every (lambda (x)
-           (double= (function-value obj1 x)
-                    (function-value obj2 x)))
-         (loop :for i :below trials
-               :collect (1- (random 1d0)))))
 
 
 (defun coefficient-cutoff (coeffs)
