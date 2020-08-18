@@ -31,15 +31,23 @@
   "The default interval.")
 
 (defun affine-transformation (a0 b0 a1 b1)
-  "Construct an affine transformation from [a0,b0] to [a1,b1]."
+  "Construct an affine transformation from [a0,b0] to [a1,b1].
+
+Returns two values: the transformation itself, and its derivative."
   (when (= a0 b0)
     (error "AFFINE-TRANSFORMATION expects a nontrivial initial interval."))
   (let ((m (/ (- a1 b1)
 	      (- a0 b0)))
 	(c (/ (- (* a0 b1) (* a1 b0))
 	      (- a0 b0))))
-    (lambda (x)
-      (+ (* m x) c))))
+    (values (lambda (x)
+	      (+ (* m x) c))
+	    m)))
+
+(defun length-distortion (a0 b0 a1 b1)
+  "Get the factor by which length is stretched in the affine transformation from [a0,b0] to [a1,b1]."
+  (/ (- a1 b1)
+     (- a0 b0)))
 
 (defun chebyshev-points (n &key (interval *default-interval*))
   "Construct an array of N Chebyshev points on the given INTERVAL. "
