@@ -12,14 +12,16 @@ Uses NUM-SAMPLES function evaluations. If DISPLAY is T, then this will open the
 resulting plot.
 "
   (check-type apfun chebyshev-approximant)
-  (let ((fn (chebyshev-approximant-interp-fn apfun)))
+  (let ((fn (chebyshev-approximant-interp-fn apfun))
+	(d (chebyshev-approximant-domain apfun)))
     (uiop:with-temporary-file (:stream data :pathname tmp)
-      (loop :for x :from -1 :to 1 :by (/ 2 num-samples)
+      (loop :for x :from (domain-lower d) :to (domain-upper d) :by (/ 2 num-samples)
             :do (format data "~&~F ~F" x (funcall fn x)))
       (finish-output data)
       (uiop:run-program
        (list "gnuplot" "-e"
-             (format nil "set terminal svg; set key off; plot '~A' w lines"
+             (format nil "set terminal svg; set key off; set xrange [~,3F:~,3F]; plot '~A' w lines"
+		     (domain-lower d) (domain-upper d)
                      tmp))
        :output file)))
   (when display
