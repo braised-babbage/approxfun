@@ -20,7 +20,12 @@
   (unless (< lower upper)
     (error "Unable to construct interval [~A, ~A]. " lower upper))
   (%make-interval :lower (coerce lower 'double-float)
-		:upper (coerce upper 'double-float)))
+		  :upper (coerce upper 'double-float)))
+
+(defun interval= (int1 int2)
+  "Are the two intervals equal?"
+  (and (double= (interval-lower int1) (interval-lower int2))
+       (double= (interval-upper int1) (interval-upper int2))))
 
 (defparameter *default-interval* (interval -1 1)
   "The default interval.")

@@ -13,7 +13,7 @@
     (when (chebyshev-approximant-name object)
       (format stream "~S " (chebyshev-approximant-name object)))
     (let ((d (chebyshev-approximant-interval object)))
-      (format stream "on [~A, ~A]" (interval-lower d) (interval-upper d)))))
+      (format stream "on [~,3F, ~,3F]" (interval-lower d) (interval-upper d)))))
 
 (defun chebyshev-polynomial (coeffs &key name (interval *default-interval*))
   "Construct a Chebyshev approximant directly from its coefficients."
