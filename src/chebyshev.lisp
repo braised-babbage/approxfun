@@ -15,8 +15,10 @@
   (unless (> n 1)
     (error "Unable to construct Chebyshev points on grid of size ~D" n))
   (let ((points (make-array n :element-type 'double-float)))
-    (loop :for i :from 0 :below n
-          :do (setf (aref points i) (cos (/ (* i pi) (1- n)))))
+    (loop :with m := (1- n)
+          :for i :from m :downto 0
+          :for k :from (- m) :by 2
+          :do (setf (aref points i) (sin (/ (* pi k) (* 2 m)))))
     points))
 
 (defun sample-at-chebyshev-points (fn num-samples)
@@ -117,6 +119,7 @@ Trefthen, 'Chopping a Chebyshev Series'.
 
 The tolerance *DOUBLE-FLOAT-TOLERANCE* is a relative tolerance, used to detect when the decay of
 Chebyshev coefficients is deemed to be negligible."
+  (declare (optimize (debug 3)))
   (let* ((n (length coeffs))
          (max-abs (loop :for i :from 0 :below n
                         :maximizing (abs (aref coeffs i))))
@@ -154,7 +157,7 @@ Chebyshev coefficients is deemed to be negligible."
                                     :until (< (aref envelope i)
                                               (expt *double-float-tolerance* (/ 7 6)))
                                     :finally (return i))))
-                      (when (< j3 j2)
+                      (when (<= j3 j2)
                         (setf j2 j3
                               (aref envelope j2) (expt *double-float-tolerance* (/ 7 6))))
                       (loop :with min := 1d0

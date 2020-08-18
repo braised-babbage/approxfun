@@ -10,4 +10,5 @@
                (:file "approx")
                (:file "operators")
                (:file "plot"))
-  :depends-on (:cffi))
+  :depends-on (:cffi)
+  :in-order-to ((asdf:test-op (asdf:test-op #:approxfun-tests))))
