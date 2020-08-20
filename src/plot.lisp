@@ -4,26 +4,45 @@
   "The command to use when displaying a plot.")
 
 (defun plot (apfun file &key
-                      (display nil)
-                      (num-samples 500))
+			  (display nil)
+			  (num-samples 500)
+			  (points nil)
+			  (xrange nil)
+			  (yrange nil))
   "Plot APFUN to FILE.
 
-Uses NUM-SAMPLES function evaluations. If DISPLAY is T, then this will open the
-resulting plot.
+Keyword Arguments:
+- If DISPLAY is T, then the resulting plot will be opened.
+- NUM-SAMPLES is the number of function evaluations to use
+- POINTS is a list of additional points (cons x y) to plot
+- XRANGE is an interval indicating the range for the x axis
+- YRANGE is an interval indicating the range for the y axis
 "
   (check-type apfun chebyshev-approximant)
   (let ((fn (chebyshev-approximant-interp-fn apfun))
 	(d (chebyshev-approximant-interval apfun)))
     (uiop:with-temporary-file (:stream data :pathname tmp)
       (loop :for x :from (interval-lower d) :to (interval-upper d) :by (/ 2 num-samples)
-            :do (format data "~&~F ~F" x (funcall fn x)))
+	    :for y := (funcall fn x)
+            :do (format data "~&~F ~F" x y))
       (finish-output data)
-      (uiop:run-program
-       (list "gnuplot" "-e"
-             (format nil "set terminal svg; set key off; set xrange [~,3F:~,3F]; plot '~A' w lines"
-		     (interval-lower d) (interval-upper d)
-                     tmp))
-       :output file)))
+      (uiop:with-temporary-file (:stream data-points :pathname tmp-pts)
+	(loop :for (x . y) :in (coerce points 'list)
+	      :do (format data-points "~&~F ~F" x y))
+	(finish-output data-points)
+	(let ((gnuplot-command
+		(with-output-to-string (gp)
+		  (format gp "set terminal svg; ")
+		  (format gp "set key off; ")
+		  (format gp "set xrange [~,3F:~,3F]; "
+			  (if xrange (interval-lower xrange) (interval-lower d))
+			  (if xrange (interval-upper xrange) (interval-upper d)))
+		  (format gp "plot '~A' w lines~@[, '~A' w points~]"
+			  tmp (and points tmp-pts))
+		  )))
+	  (uiop:run-program
+	      (list "gnuplot" "-e" gnuplot-command)
+	      :output file)))))
   (when display
     (uiop:run-program (list *display-command-name* (uiop:unix-namestring (truename file)))))
   file)
