@@ -120,3 +120,25 @@
         (dsin (differentiate (approxfun #'sin)))
         (approxfun:*double-float-tolerance* 5d-15))
     (approxfun::randomized-equality-check cos dsin)))
+
+(deftest test-colleague-matrix ()
+  "Check that we correctly construct the colleague matrix of a simple Chebyshev polynomial."
+  (let ((coeffs (vector #C(-3/8 0d0) #C(7/8 0d0) #C(-3/8 0d0) #C(1/4 0d0)))
+	(mat (magicl:from-list '(0d0     1d0    0d0
+				 0.5d0   0d0    0.5d0
+				 0.75d0 -1.25d0 0.75d0)
+			       '(3 3) :type '(complex double-float))))
+    (is (magicl:= mat (approxfun::colleague-matrix coeffs)))
+    t))
+
+(deftest test-roots ()
+  "Check that we can recover the roots of sin(3 pi x) on [-1,1]."
+  (let ((apfun (approxfun (lambda (x) (sin (* x 3 pi)))))
+	(expected-roots (list -1 -2/3 -1/3 0 1/3 2/3 1)))
+    (let ((actual-roots
+	    (sort (approxfun:roots apfun)
+		  #'<)))
+      (is (= (length actual-roots) (length expected-roots)))
+      (is (every (lambda (x y)
+		   (double= x y :threshold 1d-14))
+		 actual-roots expected-roots)))))

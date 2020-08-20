@@ -9,6 +9,7 @@
                (:file "chebyshev")
                (:file "approx")
                (:file "operators")
+	       (:file "roots")
                (:file "plot"))
-  :depends-on (:cffi)
+  :depends-on (#:cffi #:magicl)
   :in-order-to ((asdf:test-op (asdf:test-op #:approxfun-tests))))

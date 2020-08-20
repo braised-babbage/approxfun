@@ -24,6 +24,9 @@
    #:samples-from-coefficients
    #:*double-float-tolerance*
 
+   ;; roots.lisp
+   #:roots
+
    ;; plot.lisp
    #:plot
    #:plot-coefficients

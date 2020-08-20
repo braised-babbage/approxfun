@@ -10,6 +10,17 @@
   (< (abs (- x y))
      *double-float-tolerance*))
 
+(defun double<= (x y)
+  "Checks inequality up to *DOUBLE-FLOAT-TOLERANCE*"
+  (declare (type double-float x)
+           (type double-float y))
+  (<= x (+ y *double-float-tolerance*)))
+
+(defun clamp (x min max)
+  (cond ((< x min) min)
+	((> x max) max)
+	(t x)))
+
 (defstruct (interval (:constructor %make-interval))
   "A repesentation of an interval [LOWER, UPPER]."
   lower
