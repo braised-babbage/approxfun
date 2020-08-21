@@ -12,9 +12,13 @@
    #:c-
    #:c*
    #:c/
+
+   ;; calculus.lisp
    #:definite-integral
    #:integrate
    #:differentiate
+   #:maximum
+   #:minimum
 
    ;; chebyshev.lisp
    #:chebyshev-points
