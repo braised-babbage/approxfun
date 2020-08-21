@@ -10,10 +10,11 @@
 
 (defmethod print-object ((object chebyshev-approximant) stream)
   (print-unreadable-object (object stream :type t :identity t)
+    (format stream "(~D)" (length (chebyshev-approximant-coeffs object)))
     (when (chebyshev-approximant-name object)
-      (format stream "~S " (chebyshev-approximant-name object)))
+      (format stream " ~S " (chebyshev-approximant-name object)))
     (let ((d (chebyshev-approximant-interval object)))
-      (format stream "on [~,3F, ~,3F]" (interval-lower d) (interval-upper d)))))
+      (format stream " on [~,3F, ~,3F]" (interval-lower d) (interval-upper d)))))
 
 (defun chebyshev-polynomial (coeffs &key name (interval *default-interval*))
   "Construct a Chebyshev approximant directly from its coefficients."
@@ -26,8 +27,10 @@
 
 (defun randomized-equality-check (obj1 obj2 &key (trials 10) (interval *default-interval*))
   "Check that function-like objects OBJ1 and OBJ2 agree on a random set of points."
-  (let ((transform (affine-transformation 0 1
-					  (interval-lower interval) (interval-upper interval))))
+  (let ((transform
+	  (affine-transformation
+	   0 1
+	   (interval-lower interval) (interval-upper interval))))
     (every (lambda (x)
              (double= (function-value obj1 x)
                       (function-value obj2 x)))
@@ -61,8 +64,10 @@ number of function samples. Otherwise, adaptive sampling is used."
               :for cutoff := (coefficient-cutoff coeffs)
               :when cutoff
                 :do (let ((ap (approxfun fn :num-samples (1+ cutoff) :name name :interval interval)))
-                      (when (randomized-equality-check ap fn
-						       :trials *aliasing-check-num-samples*)
+                      (when (randomized-equality-check
+			     ap fn
+			     :trials *aliasing-check-num-samples*
+			     :interval interval)
                         (return ap)))
               :finally (return
                          (approxfun fn :num-samples n
