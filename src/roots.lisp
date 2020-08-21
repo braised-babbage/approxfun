@@ -7,7 +7,7 @@
 				  (double= 0d0 (imagpart c))))
 		 :finally (return i))))
     (assert (> n 1))
-    (let* ((mat (magicl:zeros (list n n) :type '(complex double-float))))
+    (let ((mat (magicl:zeros (list n n) :type '(complex double-float))))
       ;; fill sub/superdiagonals
       (loop :for i :from 1 :below n
 	    :do (setf (magicl:tref mat i     (1- i)) #C(0.5d0 0d0)
@@ -21,16 +21,39 @@
       mat)))
 
 
-(defun roots (apfun)
+(defun roots (apfun &key
+		      (max-depth 10)
+		      (recursion-points-threshold 100))
   "Compute the roots of APFUN."
-  (let ((int (chebyshev-approximant-interval apfun))
-	(mat (colleague-matrix (chebyshev-approximant-coeffs apfun))))
-    ;; roots are eigenvalues of the colleague matrix
-    (let ((*double-float-tolerance* 1d-14))
-      (loop :for c :in (magicl:eig mat)
-	     :for re := (realpart c)
-	     :for im := (imagpart c)
-	     :when (and (double= 0d0 im)
-			(double<= (interval-lower int) re)
-			(double<= re (interval-upper int))) 
-	       :collect (clamp re (interval-lower int) (interval-upper int))))))
+  (labels ((find-roots (apfun depth)
+	     (let* ((lower (interval-lower (chebyshev-approximant-interval apfun)))
+		    (upper (interval-upper (chebyshev-approximant-interval apfun)))
+		    (mid (/ (+ lower upper) 2)))
+	       (cond ((< max-depth depth)
+		      nil)
+		     ((< recursion-points-threshold
+			 (length (chebyshev-approximant-coeffs apfun)))
+		      (union (find-roots (approxfun (chebyshev-approximant-interp-fn apfun)
+						    :interval (interval lower mid))
+					 (1+ depth))
+			     (find-roots (approxfun (chebyshev-approximant-interp-fn apfun)
+						    :interval (interval mid upper))
+					 (1+ depth))
+			     :test #'double=))
+		     (t
+		      (let ((mat (colleague-matrix (chebyshev-approximant-coeffs apfun)))
+			    (transform (affine-transformation -1d0 1d0
+							      lower upper)))
+			;; roots are eigenvalues of the colleague matrix
+			(remove-duplicates
+			   (loop :for c :in (magicl:eig mat)
+				 :for x := (funcall transform (realpart c))
+				 :for im := (imagpart c)
+				 :when (and (double= 0d0 im)
+					    (double<= lower x)
+					    (double<= x upper))
+				   :collect x)
+			   :test #'double=)))))))
+    ;; fudge the fudge factor
+    (let ((*double-float-tolerance* (* 10 *double-float-tolerance*)))
+      (find-roots apfun 0))))

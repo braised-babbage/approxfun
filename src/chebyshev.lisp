@@ -144,17 +144,19 @@ Returns two values: the transformation itself, and its derivative."
       (let ((num 0d0)
             (denom 0d0)
 	    (x (funcall transform x)))
-        (loop :for i :from 0 :below (length samples)
+        (loop :for i :from 0 :below n
               :for w := 1 :then (- w)
+	      :for xi := (aref xs i)
+	      :for xdiff := (- x xi)
+	      :for fi := (aref samples i)
               ;; TODO: should we be checking up to FP precision below?
               ;; I think the main thing is just to rule out actual divide by zero,
               ;; but its worth considering more carefully.
-              :when (= x (aref xs i))
-                :do (return (aref samples i))
-              :do (let ((coeff
-                          (/ (if (< 0 i (1- n)) w (/ w 2))
-                             (- x (aref xs i)))))
-                    (incf num (* (aref samples i) coeff))
+              :when (zerop xdiff)
+                :do (return fi)
+              :do (let ((coeff (/ (if (< 0 i (1- n)) w (/ w 2))
+                             xdiff)))
+                    (incf num (* fi coeff))
                     (incf denom coeff))
               :finally (return (/ num denom)))))))
 

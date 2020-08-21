@@ -119,7 +119,7 @@
   (let ((cos (approxfun #'cos))
         (dsin (differentiate (approxfun #'sin)))
         (approxfun:*double-float-tolerance* 5d-15))
-    (approxfun::randomized-equality-check cos dsin)))
+    (is (approxfun::randomized-equality-check cos dsin))))
 
 (deftest test-colleague-matrix ()
   "Check that we correctly construct the colleague matrix of a simple Chebyshev polynomial."
@@ -142,3 +142,17 @@
       (is (every (lambda (x y)
 		   (double= x y :threshold 1d-14))
 		 actual-roots expected-roots)))))
+
+(deftest test-roots-insensitive-to-recursion-threshold ()
+  "ROOTS gives the same results regardless of whether we trigger recursion."
+  (let* ((apfun (approxfun (lambda (x)
+			     (* (sin (* 10 pi x))
+				(exp (- (* x x)))))))
+	 (ncoeffs (length (approxfun::chebyshev-approximant-coeffs apfun))))
+    (let ((default-roots (roots apfun)))
+      (is (= 21 (length default-roots)))
+      (is (null
+	   (set-exclusive-or
+	    default-roots
+	    (roots apfun :recursion-points-threshold (ceiling (/ ncoeffs 3)))
+	    :test (lambda (x y) (double= x y :threshold 1d-14))))))))
