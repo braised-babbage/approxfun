@@ -18,6 +18,7 @@ Keyword Arguments:
 - XRANGE is an interval indicating the range for the x axis
 - YRANGE is an interval indicating the range for the y axis
 "
+  (declare (ignore yrange))
   (check-type apfun chebyshev-approximant)
   (let ((fn (chebyshev-approximant-interp-fn apfun))
 	(d (chebyshev-approximant-interval apfun)))
