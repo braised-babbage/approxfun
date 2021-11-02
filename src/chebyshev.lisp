@@ -1,4 +1,4 @@
-(in-package :approxfun)
+(in-package :approxfun.coremath)
 
 (defparameter *double-float-tolerance* 1d-15
   "Tolerance for double float calculations.")
@@ -18,8 +18,8 @@
 
 (defun clamp (x min max)
   (cond ((< x min) min)
-	((> x max) max)
-	(t x)))
+        ((> x max) max)
+        (t x)))
 
 (defstruct (interval (:constructor %make-interval))
   "A repesentation of an interval [LOWER, UPPER]."
@@ -31,7 +31,7 @@
   (unless (< lower upper)
     (error "Unable to construct interval [~A, ~A]. " lower upper))
   (%make-interval :lower (coerce lower 'double-float)
-		  :upper (coerce upper 'double-float)))
+                  :upper (coerce upper 'double-float)))
 
 (defun interval= (int1 int2)
   "Are the two intervals equal?"
@@ -48,12 +48,12 @@ Returns two values: the transformation itself, and its derivative."
   (when (= a0 b0)
     (error "AFFINE-TRANSFORMATION expects a nontrivial initial interval."))
   (let ((m (/ (- a1 b1)
-	      (- a0 b0)))
-	(c (/ (- (* a0 b1) (* a1 b0))
-	      (- a0 b0))))
+              (- a0 b0)))
+        (c (/ (- (* a0 b1) (* a1 b0))
+              (- a0 b0))))
     (values (lambda (x)
-	      (+ (* m x) c))
-	    m)))
+              (+ (* m x) c))
+            m)))
 
 (defun length-distortion (a0 b0 a1 b1)
   "Get the factor by which length is stretched in the affine transformation from [a0,b0] to [a1,b1]."
@@ -65,14 +65,14 @@ Returns two values: the transformation itself, and its derivative."
   (unless (> n 1)
     (error "Unable to construct Chebyshev points on grid of size ~D" n))
   (let ((points (make-array n :element-type 'double-float))
-	(transform (affine-transformation -1d0 1d0
-					  (interval-lower interval) (interval-upper interval))))
-	(loop :with m := (1- n)
-              :for i :from m :downto 0
-              :for k :from (- m) :by 2
-              :do (setf (aref points i)
-			(funcall transform (sin (/ (* pi k) (* 2 m))))))
-	points))
+        (transform (affine-transformation -1d0 1d0
+                                          (interval-lower interval) (interval-upper interval))))
+    (loop :with m := (1- n)
+          :for i :from m :downto 0
+          :for k :from (- m) :by 2
+          :do (setf (aref points i)
+                    (funcall transform (sin (/ (* pi k) (* 2 m))))))
+    points))
 
 (defun sample-at-chebyshev-points (fn num-samples &key (interval *default-interval*))
   "Sample a function FN at NUM-SAMPLES Chebyshev points."
@@ -138,24 +138,24 @@ Returns two values: the transformation itself, and its derivative."
   ;; cf. https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
   (let* ((n (length samples))
          (xs (chebyshev-points n))
-	 (transform (affine-transformation (interval-lower interval) (interval-upper interval)
-					   -1d0 1d0)))
+         (transform (affine-transformation (interval-lower interval) (interval-upper interval)
+                                           -1d0 1d0)))
     (lambda (x)
       (let ((num 0d0)
             (denom 0d0)
-	    (x (funcall transform x)))
+            (x (funcall transform x)))
         (loop :for i :from 0 :below n
               :for w := 1 :then (- w)
-	      :for xi := (aref xs i)
-	      :for xdiff := (- x xi)
-	      :for fi := (aref samples i)
+              :for xi := (aref xs i)
+              :for xdiff := (- x xi)
+              :for fi := (aref samples i)
               ;; TODO: should we be checking up to FP precision below?
               ;; I think the main thing is just to rule out actual divide by zero,
               ;; but its worth considering more carefully.
               :when (zerop xdiff)
                 :do (return fi)
               :do (let ((coeff (/ (if (< 0 i (1- n)) w (/ w 2))
-                             xdiff)))
+                                  xdiff)))
                     (incf num (* fi coeff))
                     (incf denom coeff))
               :finally (return (/ num denom)))))))

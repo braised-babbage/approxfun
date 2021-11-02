@@ -1,5 +1,29 @@
-(defpackage #:approxfun
+;;; we stash some math stuff in approxfun.coremath, because in
+;;; approxfun proper we're shadowing normal math ops
+
+(defpackage #:approxfun.coremath
   (:use #:cl)
+  (:export
+   #:*double-float-tolerance*
+   #:double=
+   #:double<=
+   #:clamp
+   #:interval
+   #:interval-lower
+   #:interval-upper
+   #:interval=
+   #:*default-interval*
+   #:affine-transformation
+   #:length-distortion
+   #:chebyshev-points
+   #:sample-at-chebyshev-points
+   #:chebyshev-coefficients
+   #:samples-from-coefficients
+   #:chebyshev-interpolate
+   #:coefficient-cutoff))
+
+(defpackage #:approxfun
+  (:use #:cl #:approxfun.coremath)
   (:export
 
    ;; approx.lisp
@@ -8,10 +32,10 @@
    #:*log-max-chebyshev-samples*
 
    ;; operators.lisp
-   #:c+
-   #:c-
-   #:c*
-   #:c/
+   #:+
+   #:-
+   #:*
+   #:/
 
    ;; calculus.lisp
    #:definite-integral
@@ -34,4 +58,5 @@
    ;; plot.lisp
    #:plot
    #:plot-coefficients
-   ))
+   )
+  (:shadow #:+ #:- #:* #:/))

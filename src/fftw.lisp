@@ -2,7 +2,7 @@
 
 ;;; A simple FFTW wrapper, based on code from Patrick Klein.
 
-(in-package :approxfun)
+(in-package :approxfun.coremath)
 
 (eval-when
     (:compile-toplevel :load-toplevel :execute)
@@ -76,8 +76,8 @@
                            :c-out (cffi:foreign-alloc :double
                                                       :count (* 2 n)))))
       (setf (plan-c-plan plan)
-	    (fftw-plan-dft-1d n (plan-c-in plan) (plan-c-out plan)
-                        sign flags))
+            (fftw-plan-dft-1d n (plan-c-in plan) (plan-c-out plan)
+                              sign flags))
       plan)))
 
 (defun execute (plan in out)
