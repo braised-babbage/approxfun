@@ -38,6 +38,12 @@
   (and (double= (interval-lower int1) (interval-lower int2))
        (double= (interval-upper int1) (interval-upper int2))))
 
+(defun in-domain-p (x domain)
+  "Is X in the DOMAIN?"
+  (<= (interval-lower domain)
+      x
+      (interval-upper domain)))
+
 (defparameter *default-interval* (interval -1 1)
   "The default interval.")
 

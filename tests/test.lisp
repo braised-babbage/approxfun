@@ -157,3 +157,18 @@
             default-roots
             (ap:roots apfun :recursion-points-threshold (ceiling (/ ncoeffs 3)))
             :test (lambda (x y) (double= x y :threshold 1d-14))))))))
+
+(deftest test-standard-functions ()
+  "Irrational & transcendental functions apply to approxfuns correctly."
+  (let ((x (ap:approxfun #'identity :interval (ap:interval 0.1 0.9)))
+        (xs '(0.3d0 0.5d0 0.7d0)))
+    (loop 
+      :for fn :in '(sin cos tan exp log sqrt sinh cosh tanh)
+      :for apfn := (funcall (intern (symbol-name fn) :ap)
+                            x)
+      :do (loop :for x0 :in xs
+                :do (is (double= (funcall fn x0)
+                                 (ap:@ apfn x0)))))
+    (dolist (x0 xs)      
+      (is (double= (expt x0 2)
+                   (ap:@ (ap:expt x 2) x0))))))
