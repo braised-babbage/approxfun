@@ -31,11 +31,13 @@
    #:function-value
    #:*log-max-chebyshev-samples*
 
-   ;; operators.lisp
+   ;; arithmetic.lisp
    #:+
    #:-
    #:*
    #:/
+   #:@
+   #:solve
 
    ;; calculus.lisp
    #:definite-integral

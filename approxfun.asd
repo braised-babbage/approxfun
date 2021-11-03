@@ -8,7 +8,7 @@
                (:file "fftw")
                (:file "chebyshev")
                (:file "approx")
-               (:file "operators")
+               (:file "arithmetic")
 	       (:file "roots")
 	       (:file "calculus")
                (:file "plot"))
