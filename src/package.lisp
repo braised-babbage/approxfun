@@ -12,6 +12,7 @@
    #:interval-lower
    #:interval-upper
    #:interval=
+   #:in-domain-p
    #:*default-interval*
    #:affine-transformation
    #:length-distortion
@@ -31,6 +32,9 @@
    #:function-value
    #:*log-max-chebyshev-samples*
 
+   ;; chebyshev.lisp
+   #:interval
+
    ;; arithmetic.lisp
    #:+
    #:-
@@ -38,6 +42,18 @@
    #:/
    #:@
    #:solve
+
+   ;; standard-functions.lisp
+   #:sin
+   #:cos
+   #:tan
+   #:exp
+   #:log
+   #:sqrt
+   #:sinh
+   #:cosh
+   #:tanh
+   #:expt
 
    ;; calculus.lisp
    #:definite-integral
@@ -61,4 +77,8 @@
    #:plot
    #:plot-coefficients
    )
-  (:shadow #:+ #:- #:* #:/))
+  (:shadow #:+ #:- #:* #:/
+           #:sin #:cos #:tan
+           #:exp #:log #:sqrt
+           #:sinh #:cosh #:tanh
+           #:expt))

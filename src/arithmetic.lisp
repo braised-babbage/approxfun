@@ -10,22 +10,21 @@
          :format-control format-control
          :format-arguments format-args))
 
-(defmacro define-generic-binary-arithmetic (op &key documentation)
-  (let ((binary-op-name (intern (format nil "TWO-ARG-~A" op)))
-        (cl-op (intern (symbol-name op) :cl)))
+(defmacro define-generic-binary-arithmetic (op impl-op &key documentation)
+  (let ((binary-op-name (intern (format nil "TWO-ARG-~A" op))))
     `(progn
        (defgeneric ,binary-op-name (a b)
          (:method (a b)
            (error "Unable to perform ~A on ~A and ~A" ',op a b))
          (:method ((a number) (b number))
-           (,cl-op a b))
+           (,impl-op a b))
          (:method ((a chebyshev-approximant) (b number))
            (approxfun (lambda (x)
-                        (,cl-op (function-value a x) b))
+                        (,impl-op (function-value a x) b))
                       :interval (chebyshev-approximant-interval a)))
          (:method ((a number) (b chebyshev-approximant))
            (approxfun (lambda (x)
-                        (,cl-op a (function-value b x)))
+                        (,impl-op a (function-value b x)))
                       :interval (chebyshev-approximant-interval b)))
          (:method ((a chebyshev-approximant) (b chebyshev-approximant))
            (let ((int-a (chebyshev-approximant-interval a))
@@ -33,26 +32,28 @@
              (unless (interval= int-a int-b)
                (domain-error "Domain mismatch ~A ~A") int-a int-b)
              (approxfun (lambda (x)
-                         (,cl-op (function-value a x) (function-value b x)))
-                       :interval int-a))))
+                          (,impl-op (function-value a x) (function-value b x)))
+                        :interval int-a))))
        (defun ,op (&rest args)
-         ,documentation
+         ,@(if documentation
+               (list documentation)
+               nil)
          (reduce #',binary-op-name args)))))
 
-(define-generic-binary-arithmetic +
-  :documentation "Add two or more {numbers, approfuns}.")
+(define-generic-binary-arithmetic + cl:+
+  :documentation "Add two or more {numbers, approxfuns}.")
 
-(define-generic-binary-arithmetic -
-  :documentation "Add two or more {numbers, approfuns}.")
+(define-generic-binary-arithmetic - cl:-
+  :documentation "Subtract two or more {numbers, approfuns}.")
 
-(define-generic-binary-arithmetic *
-  :documentation "Add two or more {numbers, approfuns}.")
+(define-generic-binary-arithmetic * cl:*
+  :documentation "Multiply two or more {numbers, approfuns}.")
 
-(define-generic-binary-arithmetic /
-  :documentation "Add two or more {numbers, approfuns}.")
+(define-generic-binary-arithmetic / cl:/
+  :documentation "Divide two or more {numbers, approfuns}.")
 
 (defgeneric @ (g f)
-  (:documentation "Apply G to F.")
+    (:documentation "Apply G to F.")
   (:method ((g chebyshev-approximant) (f real))
     (function-value g f))
   (:method ((g chebyshev-approximant) (f chebyshev-approximant))

@@ -9,6 +9,7 @@
                (:file "chebyshev")
                (:file "approx")
                (:file "arithmetic")
+               (:file "standard-functions")
 	       (:file "roots")
 	       (:file "calculus")
                (:file "plot"))
