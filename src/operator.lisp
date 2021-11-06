@@ -27,8 +27,12 @@
                      :forward-op #'forward-op
                      :matrix-constructor #'matrix-ctr))))
 
-(defun eye (domain)
+(defun const-operator (domain const)
   (make-operator :domain domain
-                 :forward-op #'identity
-                 :matrix-constructor (lambda (n)
-                                       (magicl:eye (list n n)))))
+                 :forward-op (lambda (f) (* f const))
+                 :matrix-constructor
+                 (lambda (n)
+                   (magicl:eye (list n n) :value (coerce const 'double-float)))))
+
+(defun I (domain)
+  (const-operator domain 1d0))

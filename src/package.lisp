@@ -26,11 +26,19 @@
 (defpackage #:approxfun
   (:use #:cl #:approxfun.coremath)
   (:export
+   ;; domain.lisp
+   #:make-domain
+   #:domain
 
    ;; approx.lisp
    #:approxfun
    #:function-value
    #:*log-max-chebyshev-samples*
+
+   ;; operator.lisp
+   #:diag
+   #:const-operator
+   #:I
 
    ;; chebyshev.lisp
    #:interval

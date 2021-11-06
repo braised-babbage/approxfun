@@ -1,20 +1,20 @@
 (in-package #:approxfun)
 
-(defmacro define-generic-binary-arithmetic (op impl-op &key documentation)
+(defmacro define-generic-binary-arithmetic (op ptwise-impl mat-impl)
   (let ((binary-op-name (intern (format nil "TWO-ARG-~A" op))))
     `(progn
        (defgeneric ,binary-op-name (a b)
          (:method (a b)
            (error "Unable to perform ~A on ~A and ~A" ',op a b))
          (:method ((a number) (b number))
-           (,impl-op a b))
+           (,ptwise-impl a b))
          (:method ((a chebyshev-approximant) (b number))
            (approxfun (lambda (x)
-                        (,impl-op (function-value a x) b))
+                        (,ptwise-impl (function-value a x) b))
                       :interval (chebyshev-approximant-interval a)))
          (:method ((a number) (b chebyshev-approximant))
            (approxfun (lambda (x)
-                        (,impl-op a (function-value b x)))
+                        (,ptwise-impl a (function-value b x)))
                       :interval (chebyshev-approximant-interval b)))
          (:method ((a chebyshev-approximant) (b chebyshev-approximant))
            (let ((int-a (chebyshev-approximant-interval a))
@@ -22,25 +22,104 @@
              (unless (interval= int-a int-b)
                (domain-error "Domain mismatch ~A ~A") int-a int-b)
              (approxfun (lambda (x)
-                          (,impl-op (function-value a x) (function-value b x)))
-                        :interval int-a))))
-       (defun ,op (&rest args)
-         ,@(if documentation
-               (list documentation)
-               nil)
-         (reduce #',binary-op-name args)))))
+                          (,ptwise-impl (function-value a x) (function-value b x)))
+                        :interval int-a)))
+         ,@(when mat-impl
+             `((:method ((a operator) (b number))
+                 (,binary-op-name a (const-operator (domain a) b)))
+               (:method ((a number) (b operator))
+                 (,binary-op-name (const-operator (domain b) a) b))
+               (:method ((a operator) (b chebyshev-approximant))
+                 (,binary-op-name a (diag b)))
+               (:method ((a chebyshev-approximant) (b operator))
+                 (,binary-op-name (diag a) b))
+               (:method ((a operator) (b operator))
+                 (unless (domain= (domain a) (domain b))
+                   (domain-error "Domain mismatch ~A ~A" (domain a) (domain b)))
+                 (make-operator
+                  :domain (domain a)
+                  :forward-op (lambda (ap)
+                                (,op (funcall (operator-forward-op a) ap)
+                                     (funcall (operator-forward-op b) ap)))
+                  :matrix-constructor (lambda (n)
+                                        (,mat-impl (funcall (operator-matrix-constructor a) n)
+                                                   (funcall (operator-matrix-constructor b) n)))))))))))
 
-(define-generic-binary-arithmetic + cl:+
-  :documentation "Add two or more {numbers, approxfuns}.")
+(define-generic-binary-arithmetic + cl:+ magicl:.+)
 
-(define-generic-binary-arithmetic - cl:-
-  :documentation "Subtract two or more {numbers, approfuns}.")
+(defun + (&rest args)
+  "Return the sum of its argments. With no args, returns 0."
+  (if args
+      (reduce #'two-arg-+ args)
+      0))
 
-(define-generic-binary-arithmetic * cl:*
-  :documentation "Multiply two or more {numbers, approfuns}.")
+(define-generic-binary-arithmetic - cl:- magicl:.-)
 
-(define-generic-binary-arithmetic / cl:/
-  :documentation "Divide two or more {numbers, approfuns}.")
+(defun - (a &rest args)
+  "Subtract the second and all subsequent arguments from the first; or with one argument, negate the first argument."
+  (if args
+      (reduce #'two-arg-- (cons a args))
+      (two-arg-- 0 a)))
+
+(define-generic-binary-arithmetic * cl:* nil)
+
+(defun * (&rest args)
+  "Return the product of its arguments. With no args, returns 1."
+  (if args
+      (reduce #'two-arg-* args)
+      1))
+
+(defmethod two-arg-* ((a operator) (b number))
+  (make-operator
+   :domain (domain a)
+   :forward-op (lambda (ap)
+                 (* (funcall (operator-forward-op a) ap) b))
+   :matrix-constructor (lambda (n)
+                         (magicl:scale
+                          (funcall (operator-matrix-constructor a) n)
+                          b))))
+
+(defmethod two-arg-* ((a number) (b operator))
+  (two-arg-* b a))
+
+(defmethod two-arg-* ((a operator) (b chebyshev-approximant))
+  (two-arg-* a (diag b)))
+
+(defmethod two-arg-* ((a chebyshev-approximant) (b operator))
+  (two-arg-* b a))
+
+(defmethod two-arg-* ((a operator) (b operator))
+  (unless (domain= (domain a) (domain b))
+    (domain-error "Domain mismatch ~A ~A" (domain a) (domain b)))
+  (make-operator
+   :domain (domain a)
+   :forward-op (alexandria:compose (operator-forward-op a) (operator-forward-op b))
+   :matrix-constructor (lambda (n)
+                         (magicl:@ (funcall (operator-matrix-constructor a) n)
+                                   (funcall (operator-matrix-constructor b) n)))))
+
+(define-generic-binary-arithmetic / cl:/ nil)
+
+(defun / (a &rest args)
+  "Divide the first argument by each of the following arguments, in turn. With one argument, return reciprocal."
+  (if args
+      (reduce #'two-arg-/ (cons a args))
+      (two-arg-/ 1 a)))
+
+(defmethod two-arg-/ ((a operator) (b number))
+  (two-arg-* a (cl:/ b)))
+
+(defmethod two-arg-/ ((a number) (b operator))
+  (error "Operator division is not defined. Consider a more explicit approach (e.g. using SOLVE)."))
+
+(defmethod two-arg-/ ((a operator) (b chebyshev-approximant))
+  (two-arg-* a (/ b)))
+
+(defmethod two-arg-/ ((a chebyshev-approximant) (b operator))
+  (error "Operator division is not defined. Consider a more explicit approach (e.g. using SOLVE)."))
+
+(defmethod two-arg-/ ((a operator) (b operator))
+  (error "Operator division is not defined. Consider a more explicit approach (e.g. using SOLVE)."))
 
 (defgeneric @ (g f)
   (:documentation "Apply G to F.")
