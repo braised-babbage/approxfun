@@ -15,5 +15,5 @@
 	       (:file "roots")
 	       (:file "calculus")
                (:file "plot"))
-  :depends-on (#:cffi #:magicl)
+  :depends-on (#:alexandria #:cffi #:magicl)
   :in-order-to ((asdf:test-op (asdf:test-op #:approxfun-tests))))
