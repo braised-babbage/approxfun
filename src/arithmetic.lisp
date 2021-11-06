@@ -1,15 +1,5 @@
 (in-package #:approxfun)
 
-(define-condition domain-error (simple-error)
-  ()
-  (:documentation "An error associated with an invalid domain."))
-
-(defun domain-error (format-control &rest format-args)
-  "Signal a QUIL-EXPANSION-ERROR, incorporating information about the expansion context."
-  (error 'domain-error
-         :format-control format-control
-         :format-arguments format-args))
-
 (defmacro define-generic-binary-arithmetic (op impl-op &key documentation)
   (let ((binary-op-name (intern (format nil "TWO-ARG-~A" op))))
     `(progn
@@ -53,16 +43,29 @@
   :documentation "Divide two or more {numbers, approfuns}.")
 
 (defgeneric @ (g f)
-    (:documentation "Apply G to F.")
+  (:documentation "Apply G to F.")
   (:method ((g chebyshev-approximant) (f real))
     (function-value g f))
   (:method ((g chebyshev-approximant) (f chebyshev-approximant))
     ;; this might fail due to bounds issues
     (approxfun (lambda (x) (function-value g (function-value f x)))
-               :interval (chebyshev-approximant-interval f))))
+               :interval (chebyshev-approximant-interval f)))
+  (:method ((op operator) (f chebyshev-approximant))
+    (funcall (operator-forward-op op) f)))
 
 (defgeneric solve (A b)
   (:documentation "Attempt to solve (@ A x) == b.")
   (:method ((A chebyshev-approximant) (b real))
     ;; we solve (- (@ A x) b) == 0
-    (first (roots (- A b)))))
+    (first (roots (- A b))))
+  (:method ((A operator) (b chebyshev-approximant))
+    ;; TODO: add adaptive soln
+    (unless (domain= (domain A) (domain b))
+      (domain-error "A has domain ~A, but b has domain ~A" (domain A) (domain b)))
+    (let* ((n (length (chebyshev-approximant-values b)))
+           (bvec (magicl::from-storage (chebyshev-approximant-values b) (list n 1)))
+           (amat (funcall (operator-matrix-constructor A) n))
+           (xvec (magicl:linear-solve amat bvec)))
+      (approxfun (magicl::storage xvec) :interval (domain b)))))
+
+

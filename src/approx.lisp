@@ -8,6 +8,9 @@
   interp-fn
   interval)
 
+(defmethod domain ((ap chebyshev-approximant))
+  (chebyshev-approximant-interval ap))
+
 (defmethod print-object ((object chebyshev-approximant) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "(~D)" (length (chebyshev-approximant-coeffs object)))
@@ -48,31 +51,32 @@
 
 If NUM-SAMPLES is provided, then the approximation is made from this fixed
 number of function samples. Otherwise, adaptive sampling is used."
-  (if num-samples
-        (let ((vals (sample-at-chebyshev-points fn num-samples :interval interval)))
-          (make-chebyshev-approximant :name name
-                                      :values vals
-                                      :coeffs (chebyshev-coefficients vals)
-                                      :interp-fn (chebyshev-interpolate vals :interval interval)
-				      :interval interval))
-        ;; Adaptive search: we check on grids of size 2^d + 1, until we either
-        ;; find an adequate approximation or we hit *MAX-CHEBYSHEV-SAMPLES*
-        (loop :for d :from 4 :to *log-max-chebyshev-samples*
-              :for n := (1+ (expt 2 d))
-              :for vals := (sample-at-chebyshev-points fn n :interval interval)
-              :for coeffs := (chebyshev-coefficients vals)
-              :for cutoff := (coefficient-cutoff coeffs)
-              :when cutoff
-                :do (let ((ap (approxfun fn :num-samples (1+ cutoff) :name name :interval interval)))
-                      (when (randomized-equality-check
-			     ap fn
-			     :trials *aliasing-check-num-samples*
-			     :interval interval)
-                        (return ap)))
-              :finally (return
-                         (approxfun fn :num-samples n
-                                       :name name
-				       :interval interval)))))
+  (flet ((construct (vals)
+           (make-chebyshev-approximant :name name
+                                       :values vals
+                                       :coeffs (chebyshev-coefficients vals)
+                                       :interp-fn (chebyshev-interpolate vals :interval interval)
+				       :interval interval)))    
+    (cond ((vectorp fn)
+           (construct fn))
+          (num-samples
+           (construct (sample-at-chebyshev-points fn num-samples :interval interval)))
+          (t
+           ;; Adaptive search: we check on grids of size 2^d + 1, until we either
+           ;; find an adequate approximation or we hit *MAX-CHEBYSHEV-SAMPLES*
+           (loop :for d :from 4 :to *log-max-chebyshev-samples*
+                 :for n := (1+ (expt 2 d))
+                 :for vals := (sample-at-chebyshev-points fn n :interval interval)
+                 :for coeffs := (chebyshev-coefficients vals)
+                 :for cutoff := (coefficient-cutoff coeffs)
+                 :when cutoff
+                   :do (let ((ap (approxfun fn :num-samples (1+ cutoff) :name name :interval interval)))
+                         (when (randomized-equality-check
+			        ap fn
+			        :trials *aliasing-check-num-samples*
+			        :interval interval)
+                           (return ap)))
+                 :finally (return (construct vals)))))))
 
 (defun function-value (obj x)
   "Get the value of OBJ at point X."
