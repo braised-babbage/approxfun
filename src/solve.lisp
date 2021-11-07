@@ -25,9 +25,9 @@
     (declare (ignore order))
     (let ((n (magicl:size vec)))
       (when (dirichlet-boundary-left bc)
-        (setf (magicl:tref vec (1- n)) (dirichlet-boundary-left bc)))
+        (setf (magicl:tref vec (1- n)) (coerce (dirichlet-boundary-left bc) 'double-float)))
       (when (dirichlet-boundary-right bc)
-        (setf (magicl:tref vec 0) (dirichlet-boundary-right bc))))
+        (setf (magicl:tref vec 0) (coerce (dirichlet-boundary-right bc) 'double-float))))
     vec))
 
 (defun fixup-matrix-dirichlet-left (mat)
@@ -71,22 +71,45 @@
         (t
          (error "Solve does not support differential operators of order > 2, but got ~D." order))))))
 
+(defstruct solve-sampler
+  "Data needed to sample candidate solutions for SOLVE."
+  A b bc)
+
+(defmethod sample ((ss solve-sampler) n &key domain)
+  (declare (ignore domain))
+  (let* ((A (solve-sampler-A ss))
+         (b (approxfun (solve-sampler-b ss) :num-samples n))
+         (bc (solve-sampler-bc ss))
+         (bvec (magicl:from-array (chebyshev-approximant-values b) (list n)))
+         (amat (funcall (operator-matrix-constructor A) n)))
+    (fixup-vector-for-boundary-conditions bvec bc (operator-derivative-order A))
+    (fixup-matrix-for-boundary-conditions amat bc (operator-derivative-order A))
+    (let ((xvec (magicl:linear-solve amat bvec)))
+      (magicl::storage xvec))))
+
+(defvar *residual-error-threshold* 1d-12
+  "The residual error threshold associated with early-stopping in SOLVE.")
+
+(defmethod stopping-condition ((ss solve-sampler) (x chebyshev-approximant) &key domain)
+  (declare (ignore domain))
+  (or (null *residual-error-threshold*)
+      (let* ((fwd (@ (solve-sampler-A ss) x)))
+        (let ((*double-float-tolerance* *residual-error-threshold*))
+          (randomized-equality-check fwd (solve-sampler-b ss) :trials 20)))))
+
 (defgeneric solve (A b &key)
   (:documentation "Attempt to solve (@ A x) == b.")
   (:method ((A chebyshev-approximant) (b real) &key)
     ;; we solve (- (@ A x) b) == 0
     (first (roots (- A b))))
-  (:method ((A operator) (b chebyshev-approximant) &key boundary-conditions)
-    ;; TODO: add adaptive soln
+  (:method ((A operator) (b chebyshev-approximant) &key
+                                                     boundary-conditions
+                                                     (log-max-matrix-size 8))
     (unless (domain= (domain A) (domain b))
       (domain-error "A has domain ~A, but b has domain ~A" (domain A) (domain b)))
     (let ((order (operator-derivative-order A)))
       (when (> order 2)
         (error "Order > 2 differential operators currently unsupported in SOLVE."))
-      (let* ((n (length (chebyshev-approximant-values b)))
-             (bvec (magicl:from-array (chebyshev-approximant-values b) (list n)))
-             (amat (funcall (operator-matrix-constructor A) n)))
-        (fixup-vector-for-boundary-conditions bvec boundary-conditions order)
-        (fixup-matrix-for-boundary-conditions amat boundary-conditions order)
-        (let ((xvec (magicl:linear-solve amat bvec)))
-          (approxfun (magicl::storage xvec) :interval (domain b)))))))
+      (let ((*log-max-chebyshev-samples* log-max-matrix-size))
+        (approxfun (make-solve-sampler :a A :b b :bc boundary-conditions)
+                   :interval (domain b))))))

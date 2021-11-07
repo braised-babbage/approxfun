@@ -44,6 +44,11 @@
       x
       (interval-upper domain)))
 
+(defun domain-subset-p (d1 d2)
+  "Returns T if domain D1 is a subset of D2."
+  (and (<= (interval-lower d2) (interval-lower d1))
+       (<= (interval-upper d1) (interval-upper d2))))
+
 (defparameter *default-interval* (interval -1 1)
   "The default interval.")
 
