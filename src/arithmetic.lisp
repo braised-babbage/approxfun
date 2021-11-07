@@ -43,7 +43,9 @@
                                      (funcall (operator-forward-op b) ap)))
                   :matrix-constructor (lambda (n)
                                         (,mat-impl (funcall (operator-matrix-constructor a) n)
-                                                   (funcall (operator-matrix-constructor b) n)))))))))))
+                                                   (funcall (operator-matrix-constructor b) n)))
+                  :derivative-order (max (operator-derivative-order a)
+                                         (operator-derivative-order b))))))))))
 
 (define-generic-binary-arithmetic + cl:+ magicl:.+)
 
@@ -77,7 +79,8 @@
    :matrix-constructor (lambda (n)
                          (magicl:scale
                           (funcall (operator-matrix-constructor a) n)
-                          b))))
+                          b))
+   :derivative-order (operator-derivative-order a)))
 
 (defmethod two-arg-* ((a number) (b operator))
   (two-arg-* b a))
@@ -96,7 +99,8 @@
    :forward-op (alexandria:compose (operator-forward-op a) (operator-forward-op b))
    :matrix-constructor (lambda (n)
                          (magicl:@ (funcall (operator-matrix-constructor a) n)
-                                   (funcall (operator-matrix-constructor b) n)))))
+                                   (funcall (operator-matrix-constructor b) n)))
+   :derivative-order (+ (operator-derivative-order a) (operator-derivative-order b))))
 
 (define-generic-binary-arithmetic / cl:/ nil)
 
@@ -131,20 +135,3 @@
                :interval (chebyshev-approximant-interval f)))
   (:method ((op operator) (f chebyshev-approximant))
     (funcall (operator-forward-op op) f)))
-
-(defgeneric solve (A b)
-  (:documentation "Attempt to solve (@ A x) == b.")
-  (:method ((A chebyshev-approximant) (b real))
-    ;; we solve (- (@ A x) b) == 0
-    (first (roots (- A b))))
-  (:method ((A operator) (b chebyshev-approximant))
-    ;; TODO: add adaptive soln
-    (unless (domain= (domain A) (domain b))
-      (domain-error "A has domain ~A, but b has domain ~A" (domain A) (domain b)))
-    (let* ((n (length (chebyshev-approximant-values b)))
-           (bvec (magicl::from-storage (chebyshev-approximant-values b) (list n 1)))
-           (amat (funcall (operator-matrix-constructor A) n))
-           (xvec (magicl:linear-solve amat bvec)))
-      (approxfun (magicl::storage xvec) :interval (domain b)))))
-
-

@@ -21,7 +21,8 @@
    #:chebyshev-coefficients
    #:samples-from-coefficients
    #:chebyshev-interpolate
-   #:coefficient-cutoff))
+   #:coefficient-cutoff
+   #:chebyshev-differentiation-matrix))
 
 (defpackage #:approxfun
   (:use #:cl #:approxfun.coremath)
@@ -49,7 +50,6 @@
    #:*
    #:/
    #:@
-   #:solve
 
    ;; standard-functions.lisp
    #:sin
@@ -80,6 +80,12 @@
 
    ;; roots.lisp
    #:roots
+
+   ;; solve.lisp
+   #:dirichlet-boundary
+   #:dirichlet-boundary-left
+   #:dirichlet-boundary-right
+   #:solve
 
    ;; plot.lisp
    #:plot
