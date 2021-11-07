@@ -13,6 +13,7 @@
    #:interval-upper
    #:interval=
    #:in-domain-p
+   #:domain-subset-p
    #:*default-interval*
    #:affine-transformation
    #:length-distortion
