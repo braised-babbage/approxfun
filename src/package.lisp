@@ -41,6 +41,8 @@
    #:diag
    #:const-operator
    #:I
+   #:D
+   #:D^2
 
    ;; chebyshev.lisp
    #:interval

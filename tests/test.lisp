@@ -214,3 +214,21 @@
         (is (check= x (ap:@ (ap:- (ap:* 3 I) I) x/2)) "(3I - I)x/2 = x")
         ;; solving equations
         (is (check= x/4 (ap:solve (ap:* 2 I) x/2)) "(2I)y = x/2 ==> y = x/4")))))
+
+(deftest test-second-order-bvp-solve ()
+  "Check that we can solve a second order boundary-value problem."
+  (multiple-value-bind (omega x) (ap:make-domain -1 1)
+    (let ((A (ap:+ (ap:* 0.0025 (ap:D^2 omega))
+                   (ap:I omega)))
+          (b (ap:cos x))
+          (bc (ap:dirichlet-boundary 0 1)))
+      (let* ((soln (ap:solve A b :boundary-conditions bc))
+             ;; we have to fudge the float tolerance, due to conditioning of Chebyshev D matrices
+             ;; (i hope that's the only reason). if we don't do this, BR uses a lot of samples...
+             (ap:*double-float-tolerance* 1d-12)
+             (br (ap:@ A soln)))
+        (is (ap::double= 0d0 (ap:@ soln -1)))
+        (is (ap::double= 1d0 (ap:@ soln 1)))
+        ;; now we have to fudge again, for the equalith check
+        (let ((ap:*double-float-tolerance* 1d-11))
+          (is (ap::randomized-equality-check b br :trials 20)))))))
