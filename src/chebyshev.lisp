@@ -227,3 +227,23 @@ Chebyshev coefficients is deemed to be negligible."
                               :do (setf min cc
                                         idx i)
                             :finally (return (max (1- idx) 1)))))))))))
+
+(defun chebyshev-differentiation-matrix (n)
+  "Compute the NxN Chebyshev differentiation matrix on [-1,1]."
+  (let* ((xs (chebyshev-points n))
+         (mat (magicl:empty (list n n) :type 'double-float))
+         (m (1- n)))
+    (flet ((entry (i j)
+             (let ((ci (if (< 0 i m) 1 2))
+                   (cj (if (< 0 j m) 1 2))
+                   (xi (aref xs i))
+                   (xj (aref xs j)))
+               (if (= i j)
+                   (cond ((= i 0) (/ (1+ (* 2 m m)) 6))
+                         ((= i m) (/ (1+ (* 2 m m)) -6))
+                         (t (/ (- xi)
+                               (* 2 (- 1 (* xj xj))))))
+                   (/ (* ci (if (evenp (+ i j)) 1 -1))
+                      (* cj (- xi xj)))))))
+      (magicl::into! #'entry mat))
+    mat))
