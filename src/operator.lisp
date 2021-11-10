@@ -22,7 +22,7 @@
               (map 'list #'identity
                    (sample-at-chebyshev-points interp-fn
                                                n
-                                               :interval domain)))))      
+                                               :domain domain)))))
       (make-operator :domain domain
                      :forward-op #'forward-op
                      :matrix-constructor #'matrix-ctr))))

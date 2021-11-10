@@ -75,7 +75,7 @@
   "Data needed to sample candidate solutions for SOLVE."
   A b bc)
 
-(defmethod sample ((ss solve-sampler) n &key domain)
+(defmethod sample-at-chebyshev-points ((ss solve-sampler) n &key domain)
   (declare (ignore domain))
   (let* ((A (solve-sampler-A ss))
          (b (approxfun (solve-sampler-b ss) :num-samples n))
