@@ -3,6 +3,9 @@
 (defparameter *display-command-name* "open"
   "The command to use when displaying a plot.")
 
+(defparameter *plot-debug-stream* nil
+  "An optional stream to dump plotter commands to.")
+
 (defun plot (apfun file &key
                           (display nil)
                           (num-samples 500)
@@ -20,12 +23,16 @@ Keyword Arguments:
 "
   (declare (ignore yrange))
   (check-type apfun chebyshev-approximant)
-  (let ((fn (chebyshev-approximant-interp-fn apfun))
-        (d (chebyshev-approximant-interval apfun)))
+  (let* ((fn (chebyshev-approximant-interp-fn apfun))
+         (d (chebyshev-approximant-interval apfun))
+         (l (interval-lower d))
+         (r (interval-upper d)))
     (uiop:with-temporary-file (:stream data :pathname tmp)
-      (loop :for x :from (interval-lower d) :to (interval-upper d) :by (cl:/ 2 num-samples)
+      (loop :for x :from l :to r :by (cl:/ (- r l) num-samples)
             :for y := (funcall fn x)
-            :do (format data "~&~F ~F" x y))
+            :do (format data "~&~F ~F" x y)
+                (when *plot-debug-stream*
+                  (format *plot-debug-stream* "~&~F ~F" x y)))
       (finish-output data)
       (uiop:with-temporary-file (:stream data-points :pathname tmp-pts)
         (loop :for (x . y) :in (coerce points 'list)
@@ -33,14 +40,15 @@ Keyword Arguments:
         (finish-output data-points)
         (let ((gnuplot-command
                 (with-output-to-string (gp)
-                  (format gp "set terminal svg; ")
+                  (format gp "set terminal svg enhanced background rgb 'white'; ")
                   (format gp "set key off; ")
                   (format gp "set xrange [~,3F:~,3F]; "
                           (if xrange (interval-lower xrange) (interval-lower d))
                           (if xrange (interval-upper xrange) (interval-upper d)))
                   (format gp "plot '~A' w lines~@[, '~A' w points~]"
-                          tmp (and points tmp-pts))
-                  )))
+                          tmp (and points tmp-pts)))))
+          (when *plot-debug-stream*
+            (format *plot-debug-stream* "~%~A~%" gnuplot-command))
           (uiop:run-program
            (list "gnuplot" "-e" gnuplot-command)
            :output file)))))
@@ -61,7 +69,7 @@ If DISPLAY is T, then this will open the resulting plot."
       (finish-output data)
       (uiop:run-program
        (list "gnuplot" "-e"
-             (format nil "set terminal svg; set key off; set logscale y; plot '~A"
+             (format nil "set terminal svg enhanced background rgb 'white'; set key off; set logscale y; plot '~A"
                      tmp))
        :output file)))
   (when display
