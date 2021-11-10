@@ -5,7 +5,7 @@
   (:documentation "An error associated with an invalid domain."))
 
 (defun domain-error (format-control &rest format-args)
-  "Signal a QUIL-EXPANSION-ERROR, incorporating information about the expansion context."
+  "Signal a DOMAIN-ERROR, with the associated message."
   (error 'domain-error
          :format-control format-control
          :format-arguments format-args))

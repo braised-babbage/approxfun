@@ -85,7 +85,7 @@ Returns two values: the transformation itself, and its derivative."
                     (funcall transform (sin (/ (* pi k) (* 2 m))))))
     points))
 
-(defun sample-at-chebyshev-points (fn num-samples &key (interval *default-interval*))
+(defun sample-fn-at-chebyshev-points (fn num-samples &key (interval *default-interval*))
   "Sample a function FN at NUM-SAMPLES Chebyshev points."
   (let ((values (make-array num-samples :element-type 'double-float))
         (pts (chebyshev-points num-samples :interval interval)))

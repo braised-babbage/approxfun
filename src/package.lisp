@@ -18,7 +18,7 @@
    #:affine-transformation
    #:length-distortion
    #:chebyshev-points
-   #:sample-at-chebyshev-points
+   #:sample-fn-at-chebyshev-points
    #:chebyshev-coefficients
    #:samples-from-coefficients
    #:chebyshev-interpolate
@@ -35,6 +35,8 @@
    ;; approx.lisp
    #:approxfun
    #:function-value
+   #:sample-at-chebyshev-points
+   #:stopping-condition
    #:*log-max-chebyshev-samples*
 
    ;; operator.lisp
@@ -77,7 +79,6 @@
    #:chebyshev-points
    #:chebyshev-coefficients
    #:chebyshev-interpolate
-   #:sample-at-chebyshev-points
    #:samples-from-coefficients
    #:*double-float-tolerance*
 

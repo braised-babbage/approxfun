@@ -26,19 +26,19 @@
                                 :values samples
                                 :coeffs coeffs
                                 :interp-fn (chebyshev-interpolate samples :interval interval)
-				:interval interval)))
+                                :interval interval)))
 
 (defun randomized-equality-check (obj1 obj2 &key (trials 10) (interval *default-interval*))
   "Check that function-like objects OBJ1 and OBJ2 agree on a random set of points."
   (let ((transform
-	  (affine-transformation
-	   0 1
-	   (interval-lower interval) (interval-upper interval))))
+          (affine-transformation
+           0 1
+           (interval-lower interval) (interval-upper interval))))
     (every (lambda (x)
              (double= (function-value obj1 x)
                       (function-value obj2 x)))
            (loop :for i :below trials
-		 :collect (funcall transform (random 1d0))))))
+                 :collect (funcall transform (random 1d0))))))
 
 (defparameter *log-max-chebyshev-samples* 15
   "The logarithm (base 2) of the maximum number of Chebyshev points to sample at.")
@@ -46,17 +46,20 @@
 (defparameter *aliasing-check-num-samples* 2
   "The number of random samples to test as a check for aliasing.")
 
-(defgeneric sample (obj n &key domain)
+(defgeneric sample-at-chebyshev-points (obj n &key domain)
+  (:documentation "Sample OBJ at N Chebyshev points on DOMAIN.")
   (:method ((fn function) n &key domain)
     (unless (typep domain 'interval)
       (domain-error "Invalid domain ~A" domain))
-    (sample-at-chebyshev-points fn n :interval domain))
+    (sample-fn-at-chebyshev-points fn n :interval domain))
   (:method ((fn chebyshev-approximant) n &key domain)
     (unless (domain-subset-p domain (domain fn))
       (domain-error "Domain mismatch: got ~A but expected ~A" domain (domain fn)))
-    (sample (chebyshev-approximant-interp-fn fn) n :domain domain)))
+    (sample-at-chebyshev-points (chebyshev-approximant-interp-fn fn)
+                                n :domain domain)))
 
 (defgeneric stopping-condition (fn ap &key domain)
+  (:documentation "Return T if AP is a sufficiently close approximation to FN for adaptive sampling to terminate.")
   (:method ((fn function) (ap chebyshev-approximant) &key domain)
     (randomized-equality-check
      fn ap
@@ -75,17 +78,17 @@ number of function samples. Otherwise, adaptive sampling is used."
                                        :values vals
                                        :coeffs (chebyshev-coefficients vals)
                                        :interp-fn (chebyshev-interpolate vals :interval interval)
-				       :interval interval)))    
+                                       :interval interval)))    
     (cond ((vectorp fn)
            (construct fn))
           (num-samples
-           (construct (sample fn num-samples :domain interval)))
+           (construct (sample-at-chebyshev-points fn num-samples :domain interval)))
           (t
            ;; Adaptive search: we check on grids of size 2^d + 1, until we either
            ;; find an adequate approximation or we hit *MAX-CHEBYSHEV-SAMPLES*
            (loop :for d :from 4 :to *log-max-chebyshev-samples*
                  :for n := (1+ (expt 2 d))
-                 :for vals := (sample fn n :domain interval)
+                 :for vals := (sample-at-chebyshev-points fn n :domain interval)
                  :for coeffs := (chebyshev-coefficients vals)
                  :for cutoff := (coefficient-cutoff coeffs)
                  :when cutoff
