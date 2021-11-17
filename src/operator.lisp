@@ -41,10 +41,16 @@
 
 (defun D (domain)
   "Construct the derivative operator on DOMAIN."
-  (make-operator :domain domain
-                 :forward-op #'differentiate
-                 :matrix-constructor #'chebyshev-differentiation-matrix
-                 :derivative-order 1))
+  (unless (typep domain 'interval)
+    (domain-error "Unsupported domain ~A" domain))
+  (let ((hw (/ (- (interval-upper domain)
+                  (interval-lower domain))
+               2)))
+    (make-operator :domain domain
+                   :forward-op #'differentiate
+                   :matrix-constructor (lambda (n)
+                                         (chebyshev-differentiation-matrix n hw))
+                   :derivative-order 1)))
 
 (defun D^2 (domain)
   "Construct the second-order derivative operator on DOMAIN."

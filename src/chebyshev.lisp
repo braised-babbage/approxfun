@@ -233,8 +233,8 @@ Chebyshev coefficients is deemed to be negligible."
                                         idx i)
                             :finally (return (max (1- idx) 1)))))))))))
 
-(defun chebyshev-differentiation-matrix (n)
-  "Compute the NxN Chebyshev differentiation matrix on [-1,1]."
+(defun chebyshev-differentiation-matrix (n &optional (half-width 1d0))
+  "Compute the NxN Chebyshev differentiation matrix on an interval with the indicated HALF-WIDTH."
   (let* ((xs (chebyshev-points n))
          (mat (magicl:empty (list n n) :type 'double-float))
          (m (1- n)))
@@ -244,11 +244,13 @@ Chebyshev coefficients is deemed to be negligible."
                    (xi (aref xs i))
                    (xj (aref xs j)))
                (if (= i j)
-                   (cond ((= i 0) (/ (1+ (* 2 m m)) 6))
-                         ((= i m) (/ (1+ (* 2 m m)) -6))
+                   (cond ((= i 0) (/ (1+ (* 2 m m)) 6 half-width))
+                         ((= i m) (/ (1+ (* 2 m m)) -6 half-width))
                          (t (/ (- xi)
-                               (* 2 (- 1 (* xj xj))))))
+                               (* 2 (- 1 (* xj xj)))
+                               half-width)))
                    (/ (* ci (if (evenp (+ i j)) 1 -1))
-                      (* cj (- xi xj)))))))
+                      (* cj (- xi xj))
+                      half-width)))))
       (magicl::into! #'entry mat))
     mat))
