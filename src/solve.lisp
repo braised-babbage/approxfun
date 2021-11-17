@@ -102,6 +102,8 @@
   (:method ((A chebyshev-approximant) (b real) &key)
     ;; we solve (- (@ A x) b) == 0
     (first (roots (- A b))))
+  (:method ((A operator) (b real) &rest args &key &allow-other-keys)
+    (apply #'solve A (approxfun b :interval (domain A)) args))
   (:method ((A operator) (b chebyshev-approximant) &key
                                                      boundary-conditions
                                                      (log-max-matrix-size 8))

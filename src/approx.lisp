@@ -79,7 +79,9 @@ number of function samples. Otherwise, adaptive sampling is used."
                                        :coeffs (chebyshev-coefficients vals)
                                        :interp-fn (chebyshev-interpolate vals :interval interval)
                                        :interval interval)))    
-    (cond ((vectorp fn)
+    (cond ((realp fn)
+           (approxfun (constantly (coerce fn 'double-float)) :name name :interval interval))
+          ((vectorp fn)
            (construct fn))
           (num-samples
            (construct (sample-at-chebyshev-points fn num-samples :domain interval)))
