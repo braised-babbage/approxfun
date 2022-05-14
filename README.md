@@ -90,7 +90,6 @@ First, ordinary plots of `chebyshev-approximant` objects via the `plot` command.
 
 ```
 APPROXFUN> (plot (differentiate b))
-"dcospix.svg"
 ```
 
 ![derivative of cos(pi*x)](docs/dcospix.svg)
@@ -101,7 +100,6 @@ We can also plot the coefficients of a `cheybshev-approximant`. For smooth funct
 
 ```
 APPROXFUN> (plot-coefficients b)
-"coeffs.svg"
 ```
 
 ![coeffs of cos(pi*x)](docs/coeffs.svg)
