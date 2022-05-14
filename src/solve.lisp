@@ -75,6 +75,14 @@
   "Data needed to sample candidate solutions for SOLVE."
   A b bc)
 
+(defun linear-solve (A b)
+  "Solve Ax = b for matrix A and vector B."
+  ;; TODO: whenever this makes it to quicklisp, deprecate use of INV
+  (let ((solver (or (find-symbol "linear-solve" :magicl)
+		    (lambda (a b)
+		      (magicl:@ (magicl:inv a) b)))))
+    (funcall solver A b)))
+
 (defmethod sample-at-chebyshev-points ((ss solve-sampler) n &key domain)
   (declare (ignore domain))
   (let* ((A (solve-sampler-A ss))
@@ -84,8 +92,8 @@
          (amat (funcall (operator-matrix-constructor A) n)))
     (fixup-vector-for-boundary-conditions bvec bc (operator-derivative-order A))
     (fixup-matrix-for-boundary-conditions amat bc (operator-derivative-order A))
-    (let ((xvec (magicl:linear-solve amat bvec)))
-      (magicl::storage xvec))))
+
+    (magicl::storage (linear-solve amat bvec))))
 
 (defvar *residual-error-threshold* 1d-12
   "The residual error threshold associated with early-stopping in SOLVE.")

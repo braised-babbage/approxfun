@@ -16,5 +16,8 @@
                (:file "calculus")
                (:file "solve")
                (:file "plot"))
-  :depends-on (#:alexandria #:cffi #:magicl)
+  :depends-on (#:alexandria
+               #:cffi
+	       #:magicl/core
+	       #:magicl/ext-lapack)
   :in-order-to ((asdf:test-op (asdf:test-op #:approxfun-tests))))
