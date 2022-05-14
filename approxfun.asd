@@ -18,6 +18,7 @@
                (:file "plot"))
   :depends-on (#:alexandria
                #:cffi
+	       #:interactive-gnuplot
 	       #:magicl/core
 	       #:magicl/ext-lapack)
   :in-order-to ((asdf:test-op (asdf:test-op #:approxfun-tests))))

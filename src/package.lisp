@@ -26,7 +26,7 @@
    #:chebyshev-differentiation-matrix))
 
 (defpackage #:approxfun
-  (:use #:cl #:approxfun.coremath)
+  (:use #:cl #:approxfun.coremath #:interactive-gnuplot)
   (:export
    ;; domain.lisp
    #:make-domain

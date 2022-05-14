@@ -84,12 +84,12 @@ APPROXFUN> (differentiate b)
 
 ### Plotting
 
-We have preliminary support for two kinds of plots (using `gnuplot`).
+We have preliminary support for two kinds of plots, using [interactive-gnuplot](https://github.com/kilimanjaro/interactive-gnuplot).
 
 First, ordinary plots of `chebyshev-approximant` objects via the `plot` command.
 
 ```
-APPROXFUN> (plot (differentiate b) "dcospix.svg")
+APPROXFUN> (plot (differentiate b))
 "dcospix.svg"
 ```
 
@@ -100,7 +100,7 @@ This can be useful for making sense of otherwise complicated functions. In the a
 We can also plot the coefficients of a `cheybshev-approximant`. For smooth functions they are rapidly decaying, as you can see below.
 
 ```
-APPROXFUN> (plot-coefficients b "coeffs.svg")
+APPROXFUN> (plot-coefficients b)
 "coeffs.svg"
 ```
 
